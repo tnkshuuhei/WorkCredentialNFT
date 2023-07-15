@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract WorkCredentialNFT is ERC721, Pausable, Ownable {
+contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
@@ -22,12 +23,18 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable {
         address minterAddress;
         string description;
     }
-
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    modifier onlyAdmin() {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not a admin");
+        _;
+    }
     mapping(uint256 => TokenData) private _tokenData;
 
-    constructor() ERC721("D-WorkCredentialNFT 2023", "DWC2023") {}
+    constructor(address admin) ERC721("D-WorkCredentialNFT 2023", "DWC2023") {
+        _setupRole(ADMIN_ROLE, admin);
+    }
 
-    function setImageUrl(string memory _url) public onlyOwner {
+    function setImageUrl(string memory _url) public onlyAdmin{
         _imageUrl = _url;
     }
 
@@ -42,7 +49,7 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable {
     function mint(
         address minterAddress,
         string memory description
-    ) public payable whenNotPaused {
+    ) public payable whenNotPaused onlyAdmin{
         require(msg.value == MINT_PRICE, "Error: Invalid value");
 
         uint256 tokenId = _tokenIdCounter.current();
@@ -80,7 +87,6 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable {
             attributes,
             "]}"
         );
-
         return
             string(
                 abi.encodePacked(
@@ -96,8 +102,15 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable {
         uint256 tokenId,
         uint256 batchSize
     ) internal override whenNotPaused {
-        require(from == address(0), "Err: token is SOUL BOUND");
+        require(
+            from == address(0) || to == address(0),
+            "Err: This token is not transferable"
+        );
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    function burn(uint256 tokenId) external onlyAdmin {
+        _burn(tokenId);
     }
 
     function withdraw() external onlyOwner {
@@ -105,4 +118,13 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable {
     }
 
     function renounceOwnership() public override onlyOwner {}
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC721, AccessControl) returns (bool) {
+        return
+            interfaceId == type(IAccessControl).interfaceId ||
+            interfaceId == type(IERC721).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
 }
