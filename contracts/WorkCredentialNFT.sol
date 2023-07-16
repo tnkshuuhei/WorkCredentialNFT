@@ -8,8 +8,15 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
+contract WorkCredentialNFT is
+    ERC721,
+    Pausable,
+    Ownable,
+    AccessControl,
+    ERC721Enumerable
+{
     using Counters for Counters.Counter;
     using Strings for uint256;
     Counters.Counter private _tokenIdCounter;
@@ -108,7 +115,7 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
         address to,
         uint256 tokenId,
         uint256 batchSize
-    ) internal override whenNotPaused {
+    ) internal override(ERC721, ERC721Enumerable) whenNotPaused {
         require(
             from == address(0) || to == address(0),
             "Err: This token is not transferable"
@@ -122,7 +129,13 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721, AccessControl) returns (bool) {
+    )
+        public
+        view
+        virtual
+        override(ERC721, AccessControl, ERC721Enumerable)
+        returns (bool)
+    {
         return
             interfaceId == type(IAccessControl).interfaceId ||
             interfaceId == type(IERC721).interfaceId ||
@@ -137,7 +150,10 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
         _unpause();
     }
 
-    function setApprovalForAll(address, bool) public virtual override {
+    function setApprovalForAll(
+        address,
+        bool
+    ) public virtual override(ERC721, IERC721) {
         revert(
             "You can't approve this NFT because this is Non Transferable NFT."
         );
@@ -149,5 +165,21 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
 
     function revoke_adminRole(address admin) external onlyOwner {
         revokeRole(ADMIN_ROLE, admin);
+    }
+
+    function getTokensByAddress(
+        address owner
+    ) public view returns (uint256[] memory, string[] memory) {
+        uint256 balance = balanceOf(owner);
+        uint256[] memory tokenIds = new uint256[](balance);
+        string[] memory metadata = new string[](balance);
+
+        for (uint256 i = 0; i < balance; i++) {
+            uint256 tokenId = tokenOfOwnerByIndex(owner, i);
+            tokenIds[i] = tokenId;
+            metadata[i] = tokenURI(tokenId);
+        }
+
+        return (tokenIds, metadata);
     }
 }
