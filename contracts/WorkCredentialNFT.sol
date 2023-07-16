@@ -99,6 +99,10 @@ contract WorkCredentialNFT is
         TokenData storage tokenData = _tokenData[tokenId];
         tokenData.minterAddress = minterAddress;
         tokenData.description = description;
+
+        if (bytes(tokenData.imageUrl).length == 0) {
+            tokenData.imageUrl = _defaultImageUrl;
+        }
     }
 
     /**
@@ -123,6 +127,9 @@ contract WorkCredentialNFT is
             TokenData storage tokenData = _tokenData[tokenId];
             tokenData.minterAddress = minterAddresses[i];
             tokenData.description = descriptions[i];
+            if (bytes(tokenData.imageUrl).length == 0) {
+                tokenData.imageUrl = _defaultImageUrl;
+            }
         }
     }
 
@@ -243,6 +250,21 @@ contract WorkCredentialNFT is
         address to,
         bool approved
     ) public virtual override(ERC721, IERC721) {
+        require(
+            approved == false,
+            "You can't approve this NFT because this is Non Transferable NFT."
+        );
+    }
+
+    /**
+     * @dev Approves the given address to transfer the given token ID (reverts to prevent usage for non-transferable NFTs).
+     * @param to The address to be approved for transfer.
+     * @param tokenId The ID of the token to be approved for transfer.
+     */
+    function approve(
+        address to,
+        uint256 tokenId
+    ) public override(ERC721, IERC721) {
         revert(
             "You can't approve this NFT because this is Non Transferable NFT."
         );
@@ -291,6 +313,9 @@ contract WorkCredentialNFT is
     function getImageUrl(uint256 tokenId) public view returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
         TokenData memory tokenData = _tokenData[tokenId];
-        return tokenData.imageUrl;
+        return
+            bytes(tokenData.imageUrl).length > 0
+                ? tokenData.imageUrl
+                : _defaultImageUrl;
     }
 }
