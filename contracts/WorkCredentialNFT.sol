@@ -23,6 +23,7 @@ contract WorkCredentialNFT is
 {
     using Counters for Counters.Counter;
     using Strings for uint256;
+    Counters.Counter private _tokenIdCounter;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
