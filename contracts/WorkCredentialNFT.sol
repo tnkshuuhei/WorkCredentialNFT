@@ -30,6 +30,7 @@ contract WorkCredentialNFT is
     struct TokenData {
         address minterAddress;
         string description;
+        string imageUrl;
     }
 
     /**
@@ -45,11 +46,21 @@ contract WorkCredentialNFT is
         "https://gateway.pinata.cloud/ipfs/QmWJhNrFAQSFkT8svf4QC9mZdA7wkpcN5DRqkL2GXHLRkn";
 
     /**
-     * @dev Sets the image URL of the NFTs.
-     * @param _url The new image URL.
+     * @dev Sets the image URL of a specific NFT.
+     * @param tokenId The ID of the token for which the image URL will be set.
+     * @param imageUrl The new image URL to be set for the specified token.
+     * Requirements:
+     * - The token with the given tokenId must exist.
+     * - Only addresses with the admin role can call this function.
      */
-    function setImageUrl(string memory _url) public onlyAdmin {
-        _imageUrl = _url;
+    function setImageUrl(
+        uint256 tokenId,
+        string memory imageUrl
+    ) public onlyAdmin {
+        require(_exists(tokenId), "URI query for nonexistent token");
+        require(ownerOf(tokenId) != address(0), "Token does not exist");
+        TokenData storage tokenData = _tokenData[tokenId];
+        tokenData.imageUrl = imageUrl;
     }
 
     constructor(address admin) ERC721("D-WorkCredentialNFT 2023", "DWC2023") {
@@ -67,7 +78,7 @@ contract WorkCredentialNFT is
     ) public payable whenNotPaused onlyAdmin {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _safeMint(msg.sender, tokenId);
+        _safeMint(minterAddress, tokenId);
 
         TokenData storage tokenData = _tokenData[tokenId];
         tokenData.minterAddress = minterAddress;
