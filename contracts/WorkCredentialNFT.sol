@@ -143,19 +143,11 @@ contract WorkCredentialNFT is ERC721, Pausable, Ownable, AccessControl {
         );
     }
 
-    function getTokensByAddress(
-        address owner
-    ) public view returns (uint256[] memory, string[] memory) {
-        uint256 balance = balanceOf(owner);
-        uint256[] memory tokenIds = new uint256[](balance);
-        string[] memory metadata = new string[](balance);
+    function addAdmin(address newadmin) external onlyOwner {
+        grantRole(ADMIN_ROLE, newadmin);
+    }
 
-        for (uint256 i = 0; i < balance; i++) {
-            uint256 tokenId = tokenOfOwnerByIndex(owner, i);
-            tokenIds[i] = tokenId;
-            metadata[i] = tokenURI(tokenId);
-        }
-
-        return (tokenIds, metadata);
+    function revoke_adminRole(address admin) external onlyOwner {
+        revokeRole(ADMIN_ROLE, admin);
     }
 }
