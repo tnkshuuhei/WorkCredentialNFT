@@ -26,10 +26,10 @@ contract WorkCredentialNFT is
     Counters.Counter private _tokenIdCounter;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
     struct TokenData {
         address minterAddress;
         string description;
+        string imageUrl;
     }
 
     /**
@@ -41,24 +41,46 @@ contract WorkCredentialNFT is
     }
 
     mapping(uint256 => TokenData) private _tokenData;
-    string public _imageUrl =
-        "https://gateway.pinata.cloud/ipfs/QmWJhNrFAQSFkT8svf4QC9mZdA7wkpcN5DRqkL2GXHLRkn";
+    string private _defaultImageUrl;
 
     event Burned(address indexed oparator, uint256 indexed tokenId);
 
     /**
-     * @dev Sets the image URL of a specific NFT.
+     * @dev Sets the image URL for a specific token.
+     * @param tokenId The ID of the token.
      * @param imageUrl The new image URL to be set for the specified token.
      * Requirements:
      * - The token with the given tokenId must exist.
      * - Only addresses with the admin role can call this function.
      */
-    function setImageUrl(string memory imageUrl) public onlyAdmin {
-        _imageUrl = imageUrl;
+    function setImageUrl(
+        uint256 tokenId,
+        string memory imageUrl
+    ) public onlyAdmin {
+        require(_exists(tokenId), "URI query for nonexistent token");
+        require(ownerOf(tokenId) != address(0), "Token does not exist");
+        TokenData storage tokenData = _tokenData[tokenId];
+        tokenData.imageUrl = imageUrl;
     }
 
-    constructor(address admin) ERC721("D-WorkCredentialNFT 2023", "DWC2023") {
+    constructor(
+        address admin,
+        string memory defaultImageUrl
+    ) ERC721("D-WorkCredentialNFT 2023", "DWC2023") {
         _setupRole(ADMIN_ROLE, admin);
+        _defaultImageUrl = defaultImageUrl;
+    }
+
+    /**
+     * @dev Sets the default image URL.
+     * @param defaultImageUrl The default image URL to be set.
+     * Requirements:
+     * - Only addresses with the admin role can call this function.
+     */
+    function setDefaultImageUrl(
+        string memory defaultImageUrl
+    ) public onlyAdmin {
+        _defaultImageUrl = defaultImageUrl;
     }
 
     /**
@@ -123,13 +145,18 @@ contract WorkCredentialNFT is
             "D-Work Credential NFT 2023",
             '"}'
         );
+
+        string memory imageUrl = bytes(tokenData.imageUrl).length > 0
+            ? tokenData.imageUrl
+            : _defaultImageUrl;
+
         bytes memory metadata = abi.encodePacked(
             '{"name": "D-Work Credential NFT 2023 #',
             tokenId.toString(),
             '", "description": "',
             tokenData.description,
             '", "image": "',
-            _imageUrl,
+            imageUrl,
             '", "attributes": [',
             attributes,
             "]}"
@@ -255,5 +282,15 @@ contract WorkCredentialNFT is
         }
 
         return (tokenIds, metadata);
+    }
+
+    /**
+     * @dev Gets the image URL for the given token ID.
+     * @param tokenId The ID of the token.
+     */
+    function getImageUrl(uint256 tokenId) public view returns (string memory) {
+        require(_exists(tokenId), "URI query for nonexistent token");
+        TokenData memory tokenData = _tokenData[tokenId];
+        return tokenData.imageUrl;
     }
 }
