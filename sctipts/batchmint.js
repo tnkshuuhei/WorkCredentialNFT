@@ -12,19 +12,22 @@ async function mintBatchNFT() {
     "https://rpc-mumbai.maticvigil.com/"
   );
   const wallet = new ethers.Wallet(privateKey, provider);
-
   const contract = new ethers.Contract(contractAddress, ABI, wallet);
-
   const data = await getTask();
 
   for (const item of data) {
     const minterAddress = item[0];
     const description = item[1];
-    console.log("minterAddress", minterAddress);
-    console.log("description", description);
+    console.log("minterAddress: ", minterAddress);
+    console.log("description: ", description);
     try {
+      if (!minterAddress) {
+        console.log("minterAddress is empty or invalid");
+        continue;
+      }
       const tx = await contract.mint(minterAddress, description);
       console.log("Success!:", tx.hash);
+
       // Update 'Minted' property in NotionDB with the transaction hash
       const txHash = tx.hash;
       const pageUrl = item[2]; // URL of the Notion page
@@ -60,10 +63,8 @@ async function getTask() {
       path: `databases/${database_id}/query`,
       method: "POST",
     });
-    console.log(notion_data);
     for (let i = notion_data.results.length - 1; i >= 0; i--) {
       let data = notion_data.results[i];
-      let start_date = data.properties["開始日/納期"]?.date.start || "";
       let end_date = data.properties["開始日/納期"]?.date.end || "";
       // let type = data.properties["タスクタイプ"].select?.name || "";
       let description = data.properties["概要"].rich_text[0]?.plain_text || "";
@@ -72,15 +73,13 @@ async function getTask() {
         data.properties["担当者ウォレットアドレス"].rollup.array[0].url;
       let txHash = data.properties["Minted"].url;
       let pageUrl = data.url;
-      // let startDateObj = new Date(start_date);
       let endDateObj = new Date(end_date);
       let pageid = data.id;
-
-      if (status === "Done" && !txHash) {
+      // ステータスがDone かつ, Mintedが空欄 かつ, 納期が7月中のものを抽出
+      if (status === "Done" && !txHash && endDateObj.getMonth() === 6) {
         array.push([address, pageUrl, pageid]);
       }
     }
-    console.log("array", array);
     return array;
   } catch (error) {
     console.log("Error fetching data: ", error);
@@ -111,12 +110,11 @@ async function updateNotionPageMintedProperty(pageUrl, txHash) {
   };
 
   try {
-    const response = await axios.patch(notionUrl, data, { headers });
+    await axios.patch(notionUrl, data, { headers });
     console.log("Notion page updated:");
   } catch (error) {
     console.error("Error updating Notion page:", error.message);
   }
 }
 
-// getTask();
 mintBatchNFT();
