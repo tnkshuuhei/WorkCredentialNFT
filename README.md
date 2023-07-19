@@ -1,18 +1,24 @@
 ## WorkCredentialNFT
 
+1. Clone the repository.
 ```bash
 git clone https://github.com/tnkshuuhei/WorkCredentialNFT.git
 
 cd WorkCredentialNFT
-
+```
+2. Install dependencies.
+```
 npm install
 # or
 yarn install
+```
 
+3. Create a .env file
+```
 touch .env
 ```
 
-- then, please add the following information to the .env file
+4. Add the following information to the .env file and replace it.
 
 ```
 PRIVATE_KEY='YOUR WALLET PRIVATE KEY TO DEPLOY'
@@ -24,15 +30,16 @@ DATABASE_ID='NOTION DATABASE ID YOU WANT TO QUERY'
 NOTION_TOKEN='NOTION SECRET TOKEN'
 ```
 
-- if you finished setup, please run below command
+5. if you finished setup, please run below command
 
 ```bash
 node scripts/batchmint.js
 ```
 
-- if you haven't compiled and deployed contract, please below command before running batchmint
 
-## Compiling Contracts
+If you haven't compiled and deployed contract, please below command before running batchmint
+
+Compiling Contracts
 
 ```bash
 npm run build
@@ -40,7 +47,7 @@ npm run build
 yarn build
 ```
 
-## Deploying Contracts
+Deploying Contracts
 
 ```bash
 npm run deploy
